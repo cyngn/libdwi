@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #ifdef _MSC_VER
 #include "getopt/getopt.h"
 #else
@@ -39,6 +40,9 @@
 #define FLUSHER	while(getchar() != 0x0A)
 #define INF_NAME "libusb_device.inf"
 #define DEFAULT_DIR "C:\\usb_driver"
+
+struct wdi_options_prepare_driver pd_options = { 0 };
+struct wdi_options_install_driver id_options = { 0 };
 
 void usage(void)
 {
@@ -57,7 +61,7 @@ int __cdecl main(int argc, char *argv[])
 {
 	int c;
 	struct wdi_device_info *device, *list;
-	char* path = DEFAULT_DIR;
+	char path[2048];
 	static struct wdi_options_create_list cl_options = { 0 };
 	static int prompt_flag = 1;
 	static unsigned char iface = 0;
@@ -66,6 +70,7 @@ int __cdecl main(int argc, char *argv[])
 	static int verbose_flag = 3;
 	static int use_supplied_inf_flag = 0;
 	int r, option_index = 0;
+    int drivertype = WDI_LIBUSB0;
 
 	cl_options.trim_whitespaces = true;
 
@@ -82,6 +87,7 @@ int __cdecl main(int argc, char *argv[])
 			{"pid", required_argument, 0, 'c'},
 			{"help", no_argument, 0, 'd'},
 			{"verbose", no_argument, &verbose_flag, 0},
+			{"drivertype", required_argument, 0, 'e'},
 			{0, 0, 0, 0}
 		};
 
@@ -119,6 +125,10 @@ int __cdecl main(int argc, char *argv[])
 			usage();
 			exit(0);
 			break;
+        case 'e':
+            drivertype = atoi(optarg);
+			printf("OPT: drivertype %d\n", drivertype);
+            break;
 		default:
 			usage();
 			abort ();
@@ -157,15 +167,17 @@ int __cdecl main(int argc, char *argv[])
 				continue;
 			}
 		}
+        sprintf(path, "%s\\%d", DEFAULT_DIR, time(NULL));
 		// Does the user want to use a supplied .inf
 		if (use_supplied_inf_flag == 0) {
-			if (wdi_prepare_driver(device, path,INF_NAME, NULL) == WDI_SUCCESS) {
+            pd_options.driver_type = drivertype;
+			if (wdi_prepare_driver(device, path,INF_NAME, &pd_options) == WDI_SUCCESS) {
 				printf("installing wdi driver with <%s> at <%s>\n",INF_NAME, path);
-				wdi_install_driver(device, path, INF_NAME, NULL);
+				wdi_install_driver(device, path, INF_NAME, &id_options);
 			}
 		} else {
 			printf("installing wdi driver with <%s> at <%s>\n",INF_NAME, path);
-			wdi_install_driver(device, path, INF_NAME, NULL);
+			wdi_install_driver(device, path, INF_NAME, &id_options);
 		}
 	}
 	wdi_destroy_list(list);
