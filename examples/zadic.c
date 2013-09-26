@@ -61,7 +61,7 @@ int __cdecl main(int argc, char *argv[])
 	int c;
 	struct wdi_device_info *device, *list;
 	char path[MAX_PATH];
-	char* devicename;
+	char* devicename = NULL;
 	static struct wdi_options_create_list cl_options = { 0 };
 	static int prompt_flag = 1;
 	static unsigned char iface = 0;
